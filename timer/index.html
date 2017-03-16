@@ -1,0 +1,232 @@
+<!doctype html>
+<html>
+<head>
+    <title>Pomodoro Timer</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <style type="text/css">
+
+    * {
+      font-family: Helvetica, Arial, Sans-Serif;
+    }
+
+    html {
+        background: url("/img/summer-841622_1920.jpg") no-repeat center center fixed;
+        background-size: cover;
+    }
+
+    #timerbox {
+      background-color: white;
+      display: inline-block;
+      padding: 10px;
+      border: 2px solid black;
+      border-radius: 5px;
+    }
+
+    h1 {
+      color: red;
+    }
+
+    #type {
+      display: inline-block;
+    }
+
+    #timer {
+      text-align: right;
+      display: inline-block;
+    }
+
+    h1 {
+      margin: 0 0 20px 0;
+    }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+  <link rel="prefetch" href="/img/pool-690034_1280.jpg">
+  <div id="timerbox">
+  <h1>Pomodoro!</h1>
+  Session:
+  <button id='sessionminus'>-</button>
+  <span id='sessionlength'>25</span>
+  <button id='sessionplus'>+</button><br>
+  Break:
+  <button id='breakminus'>-</button>
+  <span id='breaklength'>5</span>
+  <button id='breakplus'>+</button><br>
+  <button id='activate'>Start</button>
+  <button id='reset'>Reset</button>
+    <p><span id='type'></span> <span id='timer'></span></p>
+  </div>
+
+<script>
+"use strict";
+$(document).ready(function() {
+
+  var timeoutId = 0;
+
+  var timer = (function() {
+    var timeleft,
+      endtime,
+      interval = 100,
+      currenttime,
+      mins,
+      secs,
+      type = 'session',
+      gong = new Audio('/audio/Metal_Gong-Dianakc-109711828.mp3'),
+      state = 'stopped';
+
+    var updatetimer = function() {
+      currenttime = (new Date()).getTime();
+      setTimeout(updatetimer, interval);
+      if (state === 'running') {
+        if (currenttime + interval < endtime) {
+          timeleft = endtime - currenttime;
+          mins = Math.floor(timeleft / 60000);
+          secs = Math.floor((timeleft % 60000) / 1000);
+          $('#timer').html((mins ? mins + ' minutes and ' : '') + secs + ' seconds.');
+        } else {
+          gong.play();
+          if (type === 'session') {
+            $('html').css('background-image', 'url(/img/pool-690034_1280.jpg)');
+            $('#type').html("Relax for the next ");
+            endtime = (new Date()).getTime() + $('#breaklength').html() * 60000;
+            type = 'break';
+          } else {
+            $('html').css('background-image', 'url(/img/summer-841622_1920.jpg)');
+            $('#type').html("Get to work, your break is in ");
+            endtime = (new Date()).getTime() + $('#sessionlength').html() * 60000;
+            type = 'session';
+          }
+        }
+      }
+    }
+
+    var activate = function(){
+      if (state === 'stopped') {
+        $('html').css('background-image', 'url(/img/summer-841622_1920.jpg)');
+        endtime = (new Date()).getTime() + $('#sessionlength').html() * 60000;
+        state = 'running';
+        $('#activate').text('Pause');
+        $('#type').html("Get to work, your break is in ");
+        updatetimer();
+      } else if (state === 'running') {
+        state = 'paused';
+        $('#activate').text('Resume');
+      } else if (state === 'paused') {
+        endtime = (new Date()).getTime() + timeleft;
+        state = 'running';
+        $('#activate').text('Pause');
+        updatetimer();
+      }
+    }
+
+    var start = function() {
+      $('html').css('background-image', 'url(/img/summer-841622_1920.jpg)');
+      endtime = (new Date()).getTime() + $('#sessionlength').html() * 60000;
+      state = 'running';
+      $('#type').html("Get to work, your break is in ");
+      updatetimer();
+    }
+
+    var pause = function() {
+      state = 'paused';
+    }
+
+    var resume = function() {
+      endtime = (new Date()).getTime() + timeleft;
+      state = 'running';
+      updatetimer();
+    }
+
+    var stateset = function(newstate) {
+      if (newstate === 'stopped'){
+        state = newstate;
+        $('#activate').text('Start');
+        $('#type').empty();
+        $('#timer').empty();
+      }
+      return state;
+    }
+
+    return {
+      activate: activate,
+      state: stateset
+    }
+
+  })();
+
+  $('#activate').click(timer.activate);
+
+  $('#reset').click(function(){
+    timer.state('stopped');
+  });
+
+  var increment = function(length) {
+    if (timer.state() !== 'running') {
+      length.html(Number(length.html()) + 1);
+      timer.state('stopped');
+    }
+  }
+
+  var decrement = function(length) {
+    if (timer.state() !== 'running' && length.html() > 1) {
+      length.html(length.html() - 1);
+      timer.state('stopped');
+    }
+  }
+
+  $('#sessionminus').mousedown(function() {
+    timeoutId = setInterval(decrement, 100, $('#sessionlength'));
+  }).bind('mouseup mouseleave', function() {
+    clearTimeout(timeoutId);
+  });
+
+  $('#sessionplus').mousedown(function() {
+    timeoutId = setInterval(increment, 100, $('#sessionlength'));
+  }).bind('mouseup mouseleave', function() {
+    clearTimeout(timeoutId);
+  });
+
+  $('#sessionminus').click(function() {
+    decrement($('#sessionlength'));
+  });
+
+  $('#sessionplus').click(function() {
+    increment($('#sessionlength'));
+  });
+
+  $('#breakminus').mousedown(function() {
+    timeoutId = setInterval(decrement, 100, $('#breaklength'));
+  }).bind('mouseup mouseleave', function() {
+    clearTimeout(timeoutId);
+  });
+
+  $('#breakplus').mousedown(function() {
+    timeoutId = setInterval(increment, 100, $('#breaklength'));
+  }).bind('mouseup mouseleave', function() {
+    clearTimeout(timeoutId);
+  });
+
+  $('#breakminus').click(function() {
+    decrement($('#breaklength'));
+  });
+
+  $('#breakplus').click(function() {
+    increment($('#breaklength'));
+  });
+
+});
+
+</script>
+
+</body>
+</html>

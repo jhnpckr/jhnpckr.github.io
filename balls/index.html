@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+    <title>Ball attached to your mouse with elastic for some reason</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <!--<script type="text/javascript" src="boids.js"></script>-->
+    <style type="text/css">
+
+    html * {
+      font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    }
+
+    p {
+      font-weight: bold;
+    }
+
+
+    #a {
+      height: 30px;
+      width: 30px;
+      border-radius: 50%;
+      background-color: black;
+      position: absolute;
+    }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+<p>The ball is attached to your mouse with elastic.</p>
+
+<input type="checkbox" name="simulationon" id="simulationon" checked> Simulation On
+
+<div id="a"></div>
+
+<script>
+var mouseX = 100, mouseY = 100, xp = 30, yp = 30
+var xv = 0, yv = 0;
+
+$(document).mousemove(function(e){
+    mouseX = e.pageX;
+    mouseY = e.pageY;
+});
+
+
+
+var loop = setInterval(function(){
+    if ($("#simulationon").is(':checked')){
+      xv += ((mouseX - xp)/1000)
+      yv += ((mouseY - yp)/1000)
+      xv *= 0.995
+      yv *= 0.995
+
+      xp += xv;
+      yp += yv;
+      $("#a").css({left:xp-15 +'px', top:yp-15 +'px'});
+
+    }
+}, 30);
+
+</script>
+
+</body>
+</html>

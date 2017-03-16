@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+<head>
+    <title>Calculator</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <style type="text/css">
+
+    #calculator {
+      width: 320px;
+      border-style: solid;
+      border-width: 1px;
+      margin-left: auto;
+      margin-right: auto;
+      font-family: Helvetica, Arial, Sans-Serif;
+    }
+
+    button {
+      height: 80px;
+      width: 80px;
+      margin: 0;
+      border: 1px;
+      background-color: #E0E0E0;
+      display: table-cell;
+      border-style: solid;
+      font-size: 30px;
+    }
+
+    button:hover {
+      background-color: #C0C0C0;
+    }
+
+    #result {
+      width: 320px;
+      height: 100px;
+      text-align: right;
+      margin: 0;
+      padding: 0 5px;
+      display: table-cell;
+      font-size: 50px;
+      vertical-align: bottom;
+      background-color: black;
+      color: white;
+    }
+
+    #zero {
+      width: 160px;
+    }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+  <div id=calculator>
+    <div id="result">0</div>
+    <button id="ac">AC</button><button id="plusminus">+/-</button><button id="percent">%</button><button id="divide">/</button><br>
+    <button id="seven">7</button><button id="eight">8</button><button id="nine">9</button><button id="multiply">*</button><br>
+    <button id="four">4</button><button id="five">5</button><button id="six">6</button><button id="subtract">-</button><br>
+    <button id="one">1</button><button id="two">2</button><button id="three">3</button><button id="add">+</button><br>
+    <button id="zero">0</button><button id="dot">.</button><button id="equals">=</button>
+  </div>
+
+<script>
+"use strict";
+$(document).ready(function() {
+  var operation,
+    mode = 'newnumber',
+    storedValue = 0;
+
+  $('button').click(function() {
+    buttonPressed(this);
+  });
+
+  function buttonPressed(button) {
+    var buttontext = button.innerHTML;
+    if (['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'].indexOf(buttontext) >= 0) {
+      if (mode === 'newnumber') {
+        if ($('#result').html() === '-0') {
+          $('#result').html('-' + buttontext);
+        } else {
+          $('#result').html(buttontext);
+        }
+        mode = 'number';
+      } else if ($('#result').html().length < 10) {
+        if (mode === 'number' || mode === 'decimal') {
+          if (Number($('#result').html()) === '0') {
+            $('#result').html(buttontext);
+          } else {
+            $('#result').append(buttontext);
+          }
+        } else if (mode === 'dot') {
+          $('#result').append('.' + buttontext);
+          mode = 'decimal'
+        }
+      }
+
+    } else if (buttontext === '.') {
+      if (mode === 'newnumber' || mode === 'number') {
+        mode = 'dot'
+      }
+    } else if (buttontext === 'AC') {
+      $('#result').html(0);
+      mode = 'newnumber';
+      operation = undefined;
+    } else if (['/', '*', '-', '+'].indexOf(buttontext) >= 0) {
+      calculate(storedValue,operation,Number($('#result').html()));
+      operation = undefined;
+      storedValue = Number($('#result').html());
+      operation = buttontext;
+      mode = 'newnumber';
+    } else if (buttontext === '=') {
+      calculate(storedValue,operation,Number($('#result').html()));
+      operation = undefined;
+      mode = 'newnumber';
+    } else if (buttontext === '+/-') {
+      if ($('#result').html().substring(0, 1) === '-') {
+        $('#result').html($('#result').html().substring(1))
+      } else {
+        $('#result').prepend('-');
+      }
+    } else if (buttontext === '%') {
+      calculate(Number($('#result').html()),'/',100);
+    }
+  }
+
+  function calculate(a,oper,b) {
+    var answer,
+        answerstr;
+    if (oper === '+') {
+      answer = a + b;
+    } else if (oper === '-') {
+      answer = a - b;
+    } else if (oper === '*') {
+      answer = a * b;
+    } else if (oper === '/') {
+      answer = a / b;
+    }
+    if (['+', '-', '*', '/'].indexOf(oper) >= 0) {
+      answerstr = answer.toString();
+      if (answerstr.length > 10) {
+        answerstr = answer.toPrecision(9);
+        if (answerstr.length > 10) {
+          answerstr = answer.toPrecision(6);
+        }
+      }
+      $('#result').html(answerstr);
+    }
+  }
+});
+
+</script>
+
+</body>
+</html>

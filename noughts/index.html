@@ -1,0 +1,395 @@
+<!doctype html>
+<html>
+<head>
+    <title>Noughts & Crosses</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <style type="text/css">
+
+    * {
+      font-family: Helvetica, Arial, Sans-Serif;
+    }
+
+    body {
+      background-color: black;
+    }
+
+    #scores {
+      color: white;
+    }
+
+    #grid {
+      width: 360px;
+      height: 360px;
+      margin: 0 auto;
+    }
+
+    .square {
+      line-height: 120px;
+      width: 120px;
+      float: left;
+      text-align: center;
+      cursor: pointer;
+      color: white;
+      font-size: 200%;
+    }
+
+    .hover {
+      color: #333333;
+    }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+  <div id="choosesymbol" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+          <h4 class="modal-title">A question&hellip;</h4>
+        </div>
+        <div class="modal-body">
+          <p>Do you want to play as X or O? (You're not going to win either way.)</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" id="playasx" class="btn btn-default" data-dismiss="modal">X</button>
+          <button type="button" id="playaso" class="btn btn-default" data-dismiss="modal">O</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="scores">Player: <span id=playerscore>0</span> // Draw: <span id=drawscore>0</span> // Computer: <span id=compscore>0</span></div>
+  <div id="grid">
+    <div id="s0" class="square"></div>
+    <div id="s1" class="square"></div>
+    <div id="s2" class="square"></div>
+    <div id="s3" class="square"></div>
+    <div id="s4" class="square"></div>
+    <div id="s5" class="square"></div>
+    <div id="s6" class="square"></div>
+    <div id="s7" class="square"></div>
+    <div id="s8" class="square"></div>
+  </div>
+
+<script>
+"use strict";
+var grid = ['-', '-', '-', '-', '-', '-', '-', '-', '-'],
+    go = '-',
+    playerscore = 0,
+    drawscore = 0,
+    compscore = 0;
+
+var winningcombinations = [[0, 1, 2],[3, 4, 5],[6, 7, 8],[0, 3, 6],[1, 4, 7],[2, 5, 8],[0, 4, 8],[2, 4, 6]];
+
+function whatsincomb(comb){
+  var line = comb.map(function(el) {
+    return grid[el];
+  });
+  var x = line.filter(function(el) {
+    return el === 'x';
+  }).length;
+  var o = line.filter(function(el) {
+    return el === 'o';
+  }).length;
+  var dash = line.filter(function(el) {
+    return el === '-';
+  }).length;
+  return {line: line, x: x, o: o, dash: dash}
+}
+
+function haswon(grid) {
+  var win = winningcombinations.filter(function(comb) {
+    return (grid[comb[0]] === grid[comb[1]] && grid[comb[1]] === grid[comb[2]] && grid[comb[0]] !== '-');
+  });
+  if (win.length === 0) return {who: '-'};
+  if (win.length === 1) return {who: grid[win[0][0]], comb: win[0]};
+  var who = win.reduce(function(a, b) {
+    return (grid[a[0]] === grid[b[0]] ? grid[a[0]] : '?');
+  });
+  if (who === '?') {
+    return {who: who};
+  } else {
+    return {who: who, comb: win[0]};
+  }
+}
+
+function canwin(grid) {
+  var results = [];
+  winningcombinations.forEach(function(comb) {
+    if (whatsincomb(comb).dash === 1) {
+      var xs = whatsincomb(comb).x;
+      var winsquare = comb.filter(function(el) {
+        return grid[el] === '-';
+      })[0];
+      if (xs !== 1) {
+        results.push({
+          who: (xs === 2 ? 'x' : 'o'),
+          comb: comb,
+          winsquare: winsquare
+        });
+      }
+    }
+  });
+  return results;
+}
+
+function fork(grid){
+  var results = [];
+  grid.forEach(function(el,i){
+    if (el === '-') {
+      var checks = winningcombinations.filter(function(comb){
+        return comb.indexOf(i) > -1;
+      }).filter(function(comb){
+        return whatsincomb(comb).dash === 2;
+      }).map(function(comb){
+        return (whatsincomb(comb).x > 0 ? 'x' : 'o');
+      });
+      var xs = checks.filter(function(maybex) {
+        return maybex === 'x';
+      }).length;
+      var os = checks.filter(function(maybeo) {
+        return maybeo === 'o';
+      }).length;
+      if (xs > 1) results.push({who: 'x', forksquare: i});
+      if (os > 1) results.push({who: 'o', forksquare: i});
+    }
+  });
+  return results;
+}
+
+function forcedefend(grid) {
+  var checks = [];
+  grid.map(function(square, i){
+    return [square, i];
+  }).filter(function(square){
+    return square[0] === '-';
+  }).forEach(function(square){
+    winningcombinations.filter(function(comb){
+      return comb.indexOf(square[1]) > -1;
+    }).forEach(function(comb){
+      if (whatsincomb(comb).dash === 2 && whatsincomb(comb)[go] === 1) {
+        var other = comb.filter(function(el){
+          return (el !== square[1] && grid[el] === '-');
+        })[0];
+        checks.push([square[1],other]);
+      }
+    });
+  });
+  return checks.filter(function(square){
+    var forks = fork(grid).filter(function(forkobj){
+      return forkobj.forksquare === square[1];
+    });
+    return forks.length === 0;
+  }).map(function(check){
+    return check[0];
+  });
+}
+
+function oppositecorner(grid, go){
+  var result = [],
+      other = (go === 'x' ? 'o' : 'x');
+  if (grid[0] === other && grid[8] === '-') result.push(8);
+  if (grid[2] === other && grid[6] === '-') result.push(6);
+  if (grid[6] === other && grid[2] === '-') result.push(2);
+  if (grid[8] === other && grid[0] === '-') result.push(0);
+  return result;
+}
+
+function updatehtmlgrid() {
+  grid.forEach(function(el, i) {
+    $('#s' + i).html(el);
+  });
+}
+
+function compmove(go, grid) {
+  var notbeen = true;
+  canwin(grid).forEach(function(obj) {
+    if (notbeen) {
+      if (obj.who === go) {
+        grid[obj.winsquare] = go;
+        notbeen = false;
+      }
+    }
+  });
+  canwin(grid).forEach(function(obj) {
+    if (notbeen) {
+      if (obj.who !== go) {
+        grid[obj.winsquare] = go;
+        notbeen = false;
+      }
+    }
+  });
+  fork(grid).forEach(function(obj) {
+    if (notbeen) {
+      if (obj.who === go) {
+        grid[obj.forksquare] = go;
+        notbeen = false;
+      }
+    }
+  });
+  if (notbeen && forcedefend(grid).length) {
+    console.log(forcedefend(grid));
+    grid[forcedefend(grid)[Math.floor(Math.random() * forcedefend(grid).length)]] = go;
+    notbeen = false;
+  }
+  fork(grid).forEach(function(obj) {
+    if (notbeen) {
+      if (obj.who !== go) {
+        grid[obj.forksquare] = go;
+        notbeen = false;
+      }
+    }
+  });
+  if (notbeen && grid[4] === '-') {
+    grid[4] = go;
+    notbeen = false;
+  }
+  if (notbeen && oppositecorner(grid,go).length) {
+    grid[oppositecorner(grid,go)[Math.floor(Math.random() * oppositecorner(grid,go).length)]] = go;
+    notbeen = false;
+  }
+  if (notbeen) {
+    var cornerposs = [],
+        sideposs = [];
+    grid.forEach(function(el, i) {
+      if (el === '-' && i % 2 === 0) cornerposs.push(i);
+      if (el === '-' && i % 2 !== 0) sideposs.push(i);
+    });
+    if (cornerposs.length > 0) {
+      grid[cornerposs[Math.floor(Math.random() * cornerposs.length)]] = go;
+    } else if (sideposs.length > 0) {
+      grid[sideposs[Math.floor(Math.random() * sideposs.length)]] = go;
+    } else {
+      setTimeout(resetgrid,2000);
+      drawscore++;
+      updatescores();
+    }
+  }
+
+}
+
+function updatescores(){
+  $('#playerscore').html(playerscore);
+  $('#drawscore').html(drawscore);
+  $('#compscore').html(compscore);
+}
+
+function resetgrid() {
+  grid = ['-', '-', '-',
+    '-', '-', '-',
+    '-', '-', '-'
+  ];
+  updatehtmlgrid();
+}
+
+function highlight(comb){
+  comb.forEach(function(el) {
+    $('#s' + el).css( "color", "red" );
+  });
+  setTimeout(function(){
+    comb.forEach(function(el) {
+      $('#s' + el).css( "color", "white" );
+    });
+    resetgrid();
+  },2000);
+
+}
+
+function resizegrid(){
+  var height = $(window).height() - 50;
+  var width = $(window).width();
+  var gridsize = (height < width ? height : width);
+  $('#grid').css('height', gridsize + 'px');
+  $('#grid').css('width', gridsize + 'px');
+  $('.square').css('line-height', gridsize/3  + 'px');
+  $('.square').css('width', gridsize/3  + 'px');
+  $('.square').css('font-size', gridsize/3  + 'px');
+}
+
+$(document).ready(function() {
+  $('#choosesymbol').modal('show');
+  resizegrid();
+  updatehtmlgrid();
+  $('#reset').click(resetgrid);
+  $(window).resize(resizegrid);
+
+  $('.square').click(function() {
+    if (go === '-') {
+      $('#choosesymbol').modal('show');
+    } else {
+      if (grid[this.id.charAt(1)] === '-') {
+        $(this).removeClass('hover');
+        grid[this.id.charAt(1)] = go
+        updatehtmlgrid();
+        go = (go === 'x' ? 'o' : 'x');
+        if (haswon(grid).who === 'x') {
+          //alert('x has won!');
+          highlight(haswon(grid).comb);
+          playerscore++;
+          updatescores();
+          return;
+        }
+        if (haswon(grid).who === 'o') {
+          //alert('o has won!');
+          highlight(haswon(grid).comb);
+          playerscore++;
+          updatescores();
+          return;
+        }
+        compmove(go, grid);
+        updatehtmlgrid();
+        go = (go === 'x' ? 'o' : 'x');
+        if (haswon(grid).who === 'x') {
+          highlight(haswon(grid).comb);
+          compscore++;
+          updatescores();
+        }
+        if (haswon(grid).who === 'o') {
+          highlight(haswon(grid).comb);
+          compscore++;
+          updatescores();
+        }
+      }
+    }
+
+
+  });
+
+  $('.square').hover(
+    function(){
+      if ($(this).html() === '-' && go !== '-'){
+        $(this).addClass('hover');
+        $(this).html(go);
+      }
+
+    },
+    function(){
+      $(this).removeClass('hover');
+      updatehtmlgrid();
+    });
+
+  $('#playasx').click(function(){
+    go = 'x';
+  });
+
+  $('#playaso').click(function(){
+    go = 'o';
+  });
+
+});
+
+</script>
+
+</body>
+</html>
