@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+<head>
+    <title>Weather</title>
+
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <style type="text/css">
+
+    * {
+      font-family: Helvetica, Arial, Sans-Serif;
+    }
+
+    html, body {
+        height: 100%;
+    }
+
+    html {
+      background: none no-repeat center center fixed;
+      background-size: cover;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      margin: 0;
+    }
+
+    #databox {
+      background-color: white;
+      padding: 10px;
+      border: 2px solid black;
+      border-radius: 5px;
+      min-height: 270px;
+      min-width: 500px;
+    }
+
+    img.bullet {
+      position: relative;
+      top: 12px;
+      height: 35px;
+    }
+
+    h1 {
+      margin: 0 0 20px 0;
+      color: DodgerBlue;
+    }
+
+
+    </style>
+
+</head>
+
+
+<body>
+
+  <div id="databox">
+    <h1>Local Weather!</h1>
+    <input type="radio" name="units" value="metric" checked>Metric
+    <br>
+    <input type="radio" name="units" value="imperial">Imperial
+    <br>
+    <div id="data"></div>
+    <br>
+  </div>
+
+<script>
+$(document).ready(function() {
+  var apikey = "6d63300025eaff337b8ab26dbfb3aa07";
+  var photos = {
+    i11d: '/img/lightning-1056419_1920.jpg',
+    i11n: '/img/lightning-1056419_1920.jpg',
+    i09d: '/img/rain-874041_1920.jpg',
+    i09n: '/img/rain-874041_1920.jpg',
+    i10d: '/img/rain-122691_1920.jpg',
+    i10n: '/img/rain-122691_1920.jpg',
+    i13d: '/img/horse-419743_1920.jpg',
+    i13n: '/img/night-690182_1280.jpg',
+    i01d: '/img/blue-sky-299765_1920.jpg',
+    i01n: '/img/stars-918777_1920.jpg',
+    i03d: '/img/ireland-829067_1920.jpg',
+    i03n: '/img/ireland-829067_1920.jpg',
+    i04d: '/img/ireland-829067_1920.jpg',
+    i04n: '/img/ireland-829067_1920.jpg',
+    i02d: '/img/tree-164915_1280.jpg',
+    i02n: '/img/sky-1075480_1920.jpg',
+    i50d: '/img/bridge-1031445_1920.jpg',
+    i50n: '/img/train-station-336602_1920.jpg'
+  };
+
+  function desc(json, units) {
+    var city = json.name,
+        temp = json.main.temp + " °" + (units==='metric'?'C':'F'),
+        words = json.weather[0].description,
+        wind = json.wind.speed + ' ' + (units==='metric'?'m/s':'mph'),
+        clouds = json.clouds.all,
+        img = '<img src="http://openweathermap.org/img/w/' + json.weather[0].icon + '.png" alt="" class="bullet">'
+        text = img + "Hey there, you're in " + city + " and the temperature is " + temp + "! <br>" + img + "You're currently experiencing " + words + "! <br>" + img + "There's a " + wind + " wind blowing! <br>" + img + "The sky is  " + clouds + "% covered with clouds!";
+    return text;
+  }
+
+  function loadweather(units) {
+    $("#data").html("<br>Please wait while we load the weather...");
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        console.log(position.coords.latitude);
+        console.log(position.coords.longitude);
+        var url = "http://api.openweathermap.org/data/2.5/weather?lat=" + position.coords.latitude.toFixed(1) + "&lon=" + position.coords.longitude.toFixed(1) + "&appid=" + apikey + "&units=" + units;
+        console.log(url);
+        $.getJSON(url, function(json) {
+          if (json.cod === '404') {
+            $("#data").html("Looks like we can't find your location :(");
+          } else {
+            $('html').css('background-image', 'url(' + photos['i' + json.weather[0].icon] + ')');
+            $("#data").html(desc(json, units));
+          }
+        });
+      },function(){
+        alert('error');
+      });
+    } else {
+      $("#data").html("Looks like we can't find your location :(");
+    }
+  }
+
+  $('input:radio').change(function(){
+        loadweather(this.value);
+    });
+
+  loadweather('metric');
+
+});
+
+</script>
+
+</body>
+</html>
